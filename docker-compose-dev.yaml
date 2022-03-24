@@ -1,0 +1,26 @@
+version: "3.9"
+services:
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./frontend:/root" # Has to be in root because of https://github.com/vitejs/vite/issues/6767
+  backend-dev:
+    build: ./backend
+    volumes:
+      - "./backend:/home/node/app:ro"
+    entrypoint: "npm run dev"
+    expose:
+      - "3000"
+  nginx-dev:
+    image: nginx:1.21
+    volumes:
+      - "./nginx-dev.conf:/etc/nginx/conf.d/default.conf:ro"
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend-dev
+      - backend-dev
