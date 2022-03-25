@@ -1,13 +1,13 @@
 version: "3.9"
 services:
   frontend-dev:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile-dev
+    image: node:17-alpine
     ports:
       - "3000:3000"
     volumes:
       - "./frontend:/root" # Has to be in root because of https://github.com/vitejs/vite/issues/6767
+    working_dir: "/root"
+    entrypoint: ["npm", "run", "dev"]
   backend-dev:
     build: ./backend
     volumes:

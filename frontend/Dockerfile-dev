@@ -1,5 +1,0 @@
-FROM node:17-alpine
-WORKDIR /root
-EXPOSE 3000
-
-ENTRYPOINT ["npm", "run", "dev"]
