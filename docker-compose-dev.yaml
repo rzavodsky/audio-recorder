@@ -12,6 +12,7 @@ services:
     build: ./backend
     volumes:
       - "./backend:/home/node/app:ro"
+      - "./audio_files:/home/node/audio:rw"
     entrypoint: "npm run dev"
     expose:
       - "3000"
