@@ -5,7 +5,15 @@ const port = 3000;
 const savedAudioPath = "/home/node/audio";
 
 const app = express();
-const upload = multer({ dest: savedAudioPath, fileFilter: fileFilter });
+
+const storage = multer.diskStorage({
+  destination: savedAudioPath,
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1E9) + ".ogg";
+    cb(null, uniqueName);
+  }
+});
+const upload = multer({ storage: storage, fileFilter: fileFilter });
 
 function fileFilter(req, file, cb) {
   cb(null, file.mimetype === "audio/ogg");
