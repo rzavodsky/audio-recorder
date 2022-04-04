@@ -8,6 +8,9 @@
           <button @click="deleteFile">Delete file</button>
       </div>
   </div>
+  <div>
+      {{statusMessage}}
+  </div>
 </template>
 
 <script setup>
@@ -20,6 +23,7 @@ const props = defineProps({
     }
 });
 
+const statusMessage = ref("");
 const recording = ref(false);
 const downloadLink = ref("");
 
@@ -61,10 +65,16 @@ function uploadFile() {
         body: formData,
     }).then(res => {
         if (res.ok) {
-            console.log("Uploaded");
+            statusMessage.value = "Uploaded";
+            setTimeout(() => statusMessage.value = "", 5000);
         } else {
-            console.error(res.status, res.body);
+            statusMessage.value = "Uploading failed";
+            setTimeout(() => statusMessage.value = "", 5000);
         }
+    }).catch(err => {
+        statusMessage.value = "Uploading failed";
+        setTimeout(() => statusMessage.value = "", 5000);
+
     })
 }
 function deleteFile() {
