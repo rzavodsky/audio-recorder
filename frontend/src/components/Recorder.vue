@@ -2,19 +2,20 @@
   <button v-if="!recording" @click="startRecording">Start recording</button>
   <button v-else @click="stopRecording">Stop recording</button>
   <div v-if="downloadLink !== ''">
-      <audio :src="downloadLink" controls></audio>
+      <audio ref="audio" :src="downloadLink" controls></audio>
       <div>
           <button @click="uploadFile">Upload file</button>
           <button @click="deleteFile">Delete file</button>
       </div>
   </div>
   <div>
-      {{statusMessage}}
+      <Waveform ref="waveform"></Waveform>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
+import Waveform from './Waveform.vue';
 
 const props = defineProps({
     onError: {
@@ -23,17 +24,20 @@ const props = defineProps({
     }
 });
 
-const statusMessage = ref("");
 const recording = ref(false);
 const downloadLink = ref("");
+const waveform = ref(null);
+const audio = ref(null);
 
 let mediaRecorder = null;
 let blob = null;
 let recordedChunks = [];
 
 function startRecording() {
-    navigator.mediaDevices.getUserMedia({audio: true})
+    navigator.mediaDevices.getUserMedia({audio: { autoGainControl: false, echoCancellation: false }})
              .then(stream => {
+                 waveform.value.setStream(stream);
+                 waveform.value.record();
                  mediaRecorder = new MediaRecorder(stream);
                  mediaRecorder.ondataavailable = e => {
                      recordedChunks.push(e.data);
@@ -51,9 +55,11 @@ function startRecording() {
              })
              .catch(err => {
                  props.onError(err.name);
+                 console.error(err);
              });
 }
 function stopRecording() {
+    waveform.value.stop();
     mediaRecorder.stop();
     mediaRecorder.stream.getAudioTracks().forEach(track => track.stop());
 }
@@ -63,19 +69,7 @@ function uploadFile() {
     fetch("/api/upload", {
         method: "POST",
         body: formData,
-    }).then(res => {
-        if (res.ok) {
-            statusMessage.value = "Uploaded";
-            setTimeout(() => statusMessage.value = "", 5000);
-        } else {
-            statusMessage.value = "Uploading failed";
-            setTimeout(() => statusMessage.value = "", 5000);
-        }
-    }).catch(err => {
-        statusMessage.value = "Uploading failed";
-        setTimeout(() => statusMessage.value = "", 5000);
-
-    })
+    });
 }
 function deleteFile() {
     blob = null;
