@@ -148,6 +148,11 @@ watch(handleLeft, newHandle => {
      top: 50%;
      transform: translate(-50%, -50%);
      pointer-events: auto;
+     cursor: grab;
+ }
+
+ .handle:active {
+     cursor: grabbing;
  }
 
  .handle.left {
