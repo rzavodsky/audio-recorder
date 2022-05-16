@@ -6,7 +6,7 @@
     You don't have any microphone connected. Please connect a microphone and try again.
   </div>
   <Recorder v-else-if="state.recording" @error="recorderErrorHandler" @finished="recorderFinished"/>
-  <Editor v-else :blob="state.recordedBlob" />
+  <Editor v-else :recordedAudio="state.recordedBlob" />
 </template>
 
 <script setup>
