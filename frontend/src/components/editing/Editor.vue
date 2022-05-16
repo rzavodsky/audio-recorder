@@ -1,7 +1,7 @@
 <template>
     <div class="waveformContainer">
         <Waveform class="waveform" v-if="sources.beforeSource != null" :source="sources.beforeSource" />
-        <Waveform class="waveform" v-if="sources.recordedSource != null" :source="sources.recordedSource" />
+        <Waveform class="waveform" v-if="sources.recordedSource != null" :source="sources.recordedSource" markers />
         <Waveform class="waveform" v-if="sources.afterSource != null" :source="sources.afterSource" />
     </div>
 </template>
