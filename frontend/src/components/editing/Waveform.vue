@@ -61,57 +61,21 @@ onMounted(() => {
         });
 });
 
-watch(handleRight, newHandle => {
+function setupHandle(handle, index) {
     let dragging = false;
-    const start = () => dragging = true;
-    const stop = () => dragging = false;
-    newHandle.onpointerdown = start;
-    newHandle.onpointerup = stop;
-    canvas.value.onpointerup = stop;
-    canvas.value.onpointerout = e => {
-        if (e.relatedTarget !== newHandle) {
-            stop();
-        }
-    };
 
-    newHandle.onpointermove = e => {
+    handle.addEventListener("pointerdown", () => dragging = true);
+    document.addEventListener("pointerup", () => dragging = false);
+    document.addEventListener("pointermove", e => {
         if (dragging) {
-            const offsetX = e.clientX - canvas.value.getBoundingClientRect().x;
-            markers.value[1] = offsetX;
-        }
-    }
-    canvas.value.onpointermove = e => {
-        if (dragging) {
-            markers.value[1] = e.offsetX;
-        }
-    }
-});
-
-watch(handleLeft, newHandle => {
-    let dragging = false;
-    const start = () => dragging = true;
-    const stop = () => dragging = false;
-    newHandle.onpointerdown = start;
-    newHandle.onpointerup = stop;
-    canvas.value.addEventListener("pointerup", stop);
-    canvas.value.addEventListener("pointerout", e => {
-        if (e.relatedTarget !== newHandle) {
-            stop();
+            const position = e.clientX - canvas.value.getBoundingClientRect().x;
+            markers.value[index] = Math.min(Math.max(position, 0), canvas.value.width);
         }
     });
+}
 
-    newHandle.onpointermove = e => {
-        if (dragging) {
-            const offsetX = e.clientX - canvas.value.getBoundingClientRect().x;
-            markers.value[0] = offsetX;
-        }
-    }
-    canvas.value.addEventListener("pointermove", e => {
-        if (dragging) {
-            markers.value[0] = e.offsetX;
-        }
-    });
-});
+watch(handleLeft,  newHandle => setupHandle(newHandle, 0));
+watch(handleRight, newHandle => setupHandle(newHandle, 1));
 
 </script>
 
