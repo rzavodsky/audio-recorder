@@ -19,7 +19,8 @@
             Audio file after: <input ref="afterInput" type="file">
         </div>
     </div>
-    <button @click="play">Play</button>
+    <button v-if="!playing" @click="play">Play</button>
+    <button v-else @click="pause">Pause</button>
 </template>
 
 <script setup>
@@ -46,7 +47,7 @@ const recordedWaveform = ref(null);
 
 const cursorPos = ref(0);
 let startingOffset = 0;
-let playing = false;
+let playing = ref(false);
 
 onMounted(async () => {
     audioClips.recorded = await getAudioData(props.recordedAudio);
@@ -116,7 +117,7 @@ function recalculateTimes() {
 
 let lastTimestamp = null;
 function animateCursor(timestamp) {
-    if (playing) requestAnimationFrame(animateCursor);
+    if (playing.value) requestAnimationFrame(animateCursor);
     else {
         lastTimestamp = null;
         return;
@@ -132,34 +133,41 @@ function animateCursor(timestamp) {
     cursorPos.value += delta * WAVEFORM_PIXELS_PER_SECOND / 1000;
 }
 
+let playingAudioElements = [];
+let playingAudioTimeouts = [];
 function play() {
     const clips = [audioClips.before, audioClips.recorded, audioClips.after];
 
+    let lastClip = null;
+
     for (const index in clips) {
-        let clip = clips[index];
+        const clip = clips[index];
         if (clip == null) continue;
-        clip.audio = new Audio(clip.url);
-        clip.audio.currentTime = clip.offset;
-        setTimeout(() => {
-            clip.audio.play();
-            if (index > 0) {
-                clips[index - 1]?.audio.pause();
-            }
-        }, clip.startTime * 1000);
+        let audio = new Audio(clip.url);
+        audio.currentTime = clip.offset;
+        const startTimeout = setTimeout(() => audio.play(), clip.startTime * 1000);
+        const stopTimeout = setTimeout(() => audio.pause(), (clip.startTime + clip.duration) * 1000)
+        lastClip = clip;
+        playingAudioElements.push(audio);
+        playingAudioTimeouts.push(startTimeout, stopTimeout);
     }
 
-    for (let i = clips.length - 1; i >= 0; i--) {
-        if (clips[i] != null) {
-            setTimeout(() => {
-                playing = false;
-            }, (clips[i].startTime + clips[i].duration) * 1000);
-            break;
-        }
-    }
+    const pauseTimeout = setTimeout(() => pause(), (lastClip.startTime + lastClip.duration) * 1000);
+    playingAudioTimeouts.push(pauseTimeout);
 
     cursorPos.value = startingOffset * WAVEFORM_PIXELS_PER_SECOND;
-    playing = true;
+    playing.value = true;
     animateCursor();
+}
+
+function pause() {
+    playing.value = false;
+    for (const timeout of playingAudioTimeouts) {
+        clearTimeout(timeout);
+    }
+    for (const audio of playingAudioElements) {
+        audio.pause();
+    }
 }
 </script>
 
