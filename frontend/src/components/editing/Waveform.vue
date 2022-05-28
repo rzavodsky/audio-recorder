@@ -115,7 +115,6 @@ defineExpose({
      top: 0;
      height: 100%;
      background-color: rgba(0, 0, 0, 0.5);
-     pointer-events: none;
  }
 
  .handle {
@@ -126,7 +125,7 @@ defineExpose({
      position: absolute;
      top: 50%;
      transform: translate(-50%, -50%);
-     pointer-events: auto;
+     touch-action: none;
      cursor: grab;
  }
 
