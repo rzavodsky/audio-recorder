@@ -14,6 +14,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from "vue";
+import { WAVEFORM_PIXELS_PER_SECOND } from "/src/constants.js";
 
 const props = defineProps({
     source: {
@@ -25,8 +26,6 @@ const props = defineProps({
 
 const emit = defineEmits(["markerChanged"]);
 
-const SAMPLE_SIZE = 512;
-const SAMPLE_RATE = props.source.sampleRate;
 const FOREGROUND = "rgb(50, 50, 200)";
 const canvas = ref(null);
 const markers = ref(null);
@@ -37,7 +36,8 @@ onMounted(() => {
     const canvasCtx = canvas.value.getContext("2d");
 
     const array = props.source.getChannelData(0);
-    canvas.value.width = Math.floor(array.length / SAMPLE_SIZE);
+    canvas.value.width = Math.floor(props.source.duration * WAVEFORM_PIXELS_PER_SECOND);
+    const sampleSize = Math.round(props.source.sampleRate / WAVEFORM_PIXELS_PER_SECOND);
     let max = 0;
 
     canvasCtx.fillStyle = FOREGROUND;
@@ -45,9 +45,9 @@ onMounted(() => {
 
     for (let i=0; i<array.length; i++) {
         max = Math.max(array[i], max);
-        if ((i+1) % SAMPLE_SIZE === 0) {
+        if ((i+1) % sampleSize === 0) {
             const y = max * canvas.value.height/2 + 1;
-            const x = Math.floor(i / SAMPLE_SIZE);
+            const x = Math.floor(i / sampleSize);
             canvasCtx.fillRect(x, -y, 1, 2*y);
             max = 0;
         }
@@ -85,7 +85,7 @@ watch(handleRight, newHandle => setupHandle(newHandle, 1));
 
 function getMarkerPos(index) {
     if (markers.value == null) return null;
-    return markers.value[index] * SAMPLE_SIZE / SAMPLE_RATE;
+    return markers.value[index] / WAVEFORM_PIXELS_PER_SECOND;
 }
 
 defineExpose({

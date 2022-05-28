@@ -23,8 +23,9 @@
 </template>
 
 <script setup>
-import Waveform from "./Waveform.vue"
+import Waveform from "./Waveform.vue";
 import { onMounted, reactive, ref, nextTick } from "vue";
+import { WAVEFORM_PIXELS_PER_SECOND } from "/src/constants.js";
 const props = defineProps({
     recordedAudio: {
         type: Blob,
@@ -41,8 +42,8 @@ const audioClips = reactive({
 
 const beforeInput = ref(null);
 const afterInput = ref(null);
-
 const recordedWaveform = ref(null);
+
 const cursorPos = ref(0);
 let startingOffset = 0;
 let playing = false;
@@ -108,7 +109,7 @@ function recalculateTimes() {
 
     for (let clip of clips) {
         if (clip != null) {
-            clip.pixelOffset = (clip.startTime - clip.offset + startingOffset) * 48000 / 512;
+            clip.pixelOffset = (clip.startTime - clip.offset + startingOffset) * WAVEFORM_PIXELS_PER_SECOND;
         }
     }
 }
@@ -128,7 +129,7 @@ function animateCursor(timestamp) {
     const delta = timestamp - lastTimestamp;
     lastTimestamp = timestamp;
 
-    cursorPos.value += delta * 48 / 512;
+    cursorPos.value += delta * WAVEFORM_PIXELS_PER_SECOND / 1000;
 }
 
 function play() {
@@ -156,7 +157,7 @@ function play() {
         }
     }
 
-    cursorPos.value = startingOffset * 48000 / 512;
+    cursorPos.value = startingOffset * WAVEFORM_PIXELS_PER_SECOND;
     playing = true;
     animateCursor();
 }
