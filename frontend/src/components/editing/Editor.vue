@@ -1,12 +1,15 @@
 <template>
     <div class="waveformContainer">
-        <Waveform class="waveform" v-if="audioClips.before != null" :source="audioClips.before.audioBuffer"
-            :style="{ left: audioClips.before.pixelOffset + 'px' }" />
-        <Waveform class="waveform" v-if="audioClips.recorded != null" :source="audioClips.recorded.audioBuffer" markers
-            @markerChanged="recalculateTimes" ref="recordedWaveform"
-            :style="{ left: audioClips.recorded.pixelOffset + 'px' }" />
-        <Waveform class="waveform" v-if="audioClips.after != null" :source="audioClips.after.audioBuffer"
-            :style="{ left: audioClips.after.pixelOffset + 'px' }" />
+        <div>
+            <Waveform class="waveform" v-if="audioClips.before != null" :source="audioClips.before.audioBuffer"
+                      :style="{ left: audioClips.before.pixelOffset + 'px' }" />
+            <Waveform class="waveform" v-if="audioClips.recorded != null" :source="audioClips.recorded.audioBuffer" markers
+                      @markerChanged="recalculateTimes" ref="recordedWaveform"
+                      :style="{ left: audioClips.recorded.pixelOffset + 'px' }" />
+            <Waveform class="waveform" v-if="audioClips.after != null" :source="audioClips.after.audioBuffer"
+                      :style="{ left: audioClips.after.pixelOffset + 'px' }" />
+        </div>
+        <div class="cursor" :style="{ left: cursorPos + 'px' }"></div>
     </div>
     <div>
         <div>
@@ -40,7 +43,9 @@ const beforeInput = ref(null);
 const afterInput = ref(null);
 
 const recordedWaveform = ref(null);
+const cursorPos = ref(0);
 let startingOffset = 0;
+let playing = false;
 
 onMounted(async () => {
     audioClips.recorded = await getAudioData(props.recordedAudio);
@@ -107,6 +112,25 @@ function recalculateTimes() {
         }
     }
 }
+
+let lastTimestamp = null;
+function animateCursor(timestamp) {
+    if (playing) requestAnimationFrame(animateCursor);
+    else {
+        lastTimestamp = null;
+        return;
+    }
+
+    if (lastTimestamp == null) {
+        lastTimestamp = timestamp;
+        return;
+    }
+    const delta = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+
+    cursorPos.value += delta * 48 / 512;
+}
+
 function play() {
     const clips = [audioClips.before, audioClips.recorded, audioClips.after];
 
@@ -122,6 +146,19 @@ function play() {
             }
         }, clip.startTime * 1000);
     }
+
+    for (let i = clips.length - 1; i >= 0; i--) {
+        if (clips[i] != null) {
+            setTimeout(() => {
+                playing = false;
+            }, (clips[i].startTime + clips[i].duration) * 1000);
+            break;
+        }
+    }
+
+    cursorPos.value = startingOffset * 48000 / 512;
+    playing = true;
+    animateCursor();
 }
 </script>
 
@@ -130,9 +167,21 @@ function play() {
     margin-bottom: 10px;
 }
 
+.waveform:last-child {
+    margin-bottom: 0;
+}
+
 .waveformContainer {
     width: 500px;
     overflow: auto;
     position: relative;
+}
+
+.cursor {
+    position: absolute;
+    width: 2px;
+    background: black;
+    height: 100%;
+    top: 0;
 }
 </style>
