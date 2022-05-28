@@ -23,6 +23,8 @@ const props = defineProps({
     markers: Boolean,
 })
 
+const emit = defineEmits(["markerChanged"]);
+
 const SAMPLE_SIZE = 512;
 const SAMPLE_RATE = props.source.sampleRate;
 const FOREGROUND = "rgb(50, 50, 200)";
@@ -60,17 +62,35 @@ function setupHandle(handle, index) {
     let dragging = false;
 
     handle.addEventListener("pointerdown", () => dragging = true);
-    document.addEventListener("pointerup", () => dragging = false);
+    document.addEventListener("pointerup", () => {
+        if (dragging) {
+            dragging = false;
+            emit("markerChanged");
+        }
+    });
     document.addEventListener("pointermove", e => {
         if (dragging) {
             const position = e.clientX - canvas.value.getBoundingClientRect().x;
-            markers.value[index] = Math.min(Math.max(position, 0), canvas.value.width);
+
+            const min = index > 0 ? markers.value[index-1] : 0;
+            const max = index < markers.value.length-1 ? markers.value[index+1] : canvas.value.width;
+
+            markers.value[index] = Math.min(Math.max(position, min), max);
         }
     });
 }
 
 watch(handleLeft,  newHandle => setupHandle(newHandle, 0));
 watch(handleRight, newHandle => setupHandle(newHandle, 1));
+
+function getMarkerPos(index) {
+    if (markers.value == null) return null;
+    return markers.value[index] * SAMPLE_SIZE / SAMPLE_RATE;
+}
+
+defineExpose({
+    getMarkerPos,
+});
 
 </script>
 
