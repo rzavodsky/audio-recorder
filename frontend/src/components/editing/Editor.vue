@@ -1,16 +1,5 @@
 <template>
-    <div class="waveformContainer">
-        <div>
-            <Waveform class="waveform" v-if="audioClips.before != null" :source="audioClips.before.audioBuffer"
-                      :style="{ left: audioClips.before.pixelOffset + 'px' }" />
-            <Waveform class="waveform" v-if="audioClips.recorded != null" :source="audioClips.recorded.audioBuffer" markers
-                      @markerChanged="recalculateTimes" ref="recordedWaveform"
-                      :style="{ left: audioClips.recorded.pixelOffset + 'px' }" />
-            <Waveform class="waveform" v-if="audioClips.after != null" :source="audioClips.after.audioBuffer"
-                      :style="{ left: audioClips.after.pixelOffset + 'px' }" />
-        </div>
-        <div class="cursor" :style="{ left: cursorPos + 'px' }"></div>
-    </div>
+    <WaveformContainer ref="waveforms" @markerChanged="recalculateTimes" :audioClips="audioClips" :playing="playing" v-model="cursorPos" />
     <div>
         <div>
             Audio file before: <input ref="beforeInput" type="file">
@@ -24,9 +13,8 @@
 </template>
 
 <script setup>
-import Waveform from "./Waveform.vue";
-import { onMounted, reactive, ref, nextTick } from "vue";
-import { WAVEFORM_PIXELS_PER_SECOND } from "/src/constants.js";
+import WaveformContainer from "./WaveformContainer.vue";
+import { onMounted, reactive, ref, nextTick, watch } from "vue";
 const props = defineProps({
     recordedAudio: {
         type: Blob,
@@ -43,10 +31,10 @@ const audioClips = reactive({
 
 const beforeInput = ref(null);
 const afterInput = ref(null);
-const recordedWaveform = ref(null);
+const waveforms = ref(null);
 
 const cursorPos = ref(0);
-let startingOffset = 0;
+
 let playing = ref(false);
 
 onMounted(async () => {
@@ -84,8 +72,8 @@ async function getAudioData(file) {
 }
 
 function recalculateTimes() {
-    const beginning = recordedWaveform.value.getMarkerPos(0);
-    const end = recordedWaveform.value.getMarkerPos(1);
+    const beginning = waveforms.value.getMarkerPos(0);
+    const end = waveforms.value.getMarkerPos(1);
     audioClips.recorded.duration = end - beginning;
 
     const clips = [audioClips.before, audioClips.recorded, audioClips.after];
@@ -101,37 +89,8 @@ function recalculateTimes() {
     }
     audioClips.recorded.offset = beginning;
 
-    startingOffset = 0;
-    for (const clip of clips) {
-        if (clip != null && clip.offset > clip.startTime + startingOffset) {
-            startingOffset = clip.offset - clip.startTime;
-        }
-    }
-
-    for (let clip of clips) {
-        if (clip != null) {
-            clip.pixelOffset = (clip.startTime - clip.offset + startingOffset) * WAVEFORM_PIXELS_PER_SECOND;
-        }
-    }
 }
 
-let lastTimestamp = null;
-function animateCursor(timestamp) {
-    if (playing.value) requestAnimationFrame(animateCursor);
-    else {
-        lastTimestamp = null;
-        return;
-    }
-
-    if (lastTimestamp == null) {
-        lastTimestamp = timestamp;
-        return;
-    }
-    const delta = timestamp - lastTimestamp;
-    lastTimestamp = timestamp;
-
-    cursorPos.value += delta * WAVEFORM_PIXELS_PER_SECOND / 1000;
-}
 
 let playingAudioElements = [];
 let playingAudioTimeouts = [];
@@ -155,9 +114,8 @@ function play() {
     const pauseTimeout = setTimeout(() => pause(), (lastClip.startTime + lastClip.duration) * 1000);
     playingAudioTimeouts.push(pauseTimeout);
 
-    cursorPos.value = startingOffset * WAVEFORM_PIXELS_PER_SECOND;
+    cursorPos.value = 0;
     playing.value = true;
-    animateCursor();
 }
 
 function pause() {
@@ -180,17 +138,4 @@ function pause() {
     margin-bottom: 0;
 }
 
-.waveformContainer {
-    width: 500px;
-    overflow: auto;
-    position: relative;
-}
-
-.cursor {
-    position: absolute;
-    width: 2px;
-    background: black;
-    height: 100%;
-    top: 0;
-}
 </style>
