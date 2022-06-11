@@ -22,7 +22,7 @@
 <script setup>
 import { reactive, watch, ref, onMounted } from "vue";
 import Waveform from "./Waveform.vue";
-import { WAVEFORM_PIXELS_PER_SECOND } from "/src/constants.js";
+import { WAVEFORM_PIXELS_PER_SECOND } from "/src/waveform.js";
 
 const props = defineProps({
     audioClips: {

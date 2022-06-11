@@ -14,7 +14,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from "vue";
-import { WAVEFORM_PIXELS_PER_SECOND } from "/src/constants.js";
+import { WAVEFORM_PIXELS_PER_SECOND, drawWaveform } from "/src/waveform.js";
 
 const props = defineProps({
     source: {
@@ -26,32 +26,30 @@ const props = defineProps({
 
 const emit = defineEmits(["markerChanged"]);
 
-const FOREGROUND = "rgb(50, 50, 200)";
 const canvas = ref(null);
 const markers = ref(null);
 const handleLeft = ref(null);
 const handleRight = ref(null);
 
+let canvasCtx = null;
+const waveformData = [];
+
 onMounted(() => {
-    const canvasCtx = canvas.value.getContext("2d");
+    canvasCtx = canvas.value.getContext("2d");
 
     const array = props.source.getChannelData(0);
     canvas.value.width = Math.floor(props.source.duration * WAVEFORM_PIXELS_PER_SECOND);
     const sampleSize = Math.round(props.source.sampleRate / WAVEFORM_PIXELS_PER_SECOND);
     let max = 0;
 
-    canvasCtx.fillStyle = FOREGROUND;
-    canvasCtx.translate(0, canvas.value.height/2);
-
     for (let i=0; i<array.length; i++) {
         max = Math.max(array[i], max);
         if ((i+1) % sampleSize === 0) {
-            const y = max * canvas.value.height/2 + 1;
-            const x = Math.floor(i / sampleSize);
-            canvasCtx.fillRect(x, -y, 1, 2*y);
+            waveformData.push(max);
             max = 0;
         }
     }
+    drawWaveform(canvas.value, canvasCtx, waveformData);
 
     if (props.markers) {
         markers.value = [20, canvas.value.width - 20];

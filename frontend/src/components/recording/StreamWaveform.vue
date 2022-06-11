@@ -7,6 +7,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
+import { drawWaveform } from "/src/waveform.js";
 
 const props = defineProps(["width", "height"]);
 const foreground = "rgb(50, 50, 200)";
@@ -50,9 +51,9 @@ function render() {
     // Resize canvas if necessary, then redraw entire waveform, otherwise just draw new data
     if (data.length > canvas.value.width) {
         canvas.value.width = Math.ceil(data.length / props.width) * props.width;
-        drawWaveform(0);
+        drawWaveform(canvas.value, canvasCtx, data);
     } else {
-        drawWaveform(lastDataLength);
+        drawWaveform(canvas.value, canvasCtx, data, lastDataLength);
     }
     lastDataLength = data.length;
     cursorPos.value = data.length;
@@ -60,22 +61,6 @@ function render() {
     if (shouldDraw) {
         requestAnimationFrame(render);
     }
-}
-
-function drawWaveform(startAt) {
-    canvasCtx.clearRect(startAt, 0, canvas.value.width - startAt, canvas.value.height);
-
-    canvasCtx.fillStyle = foreground;
-    // Move origin of y axis to the center of the canvas
-    canvasCtx.translate(0, canvas.value.height/2);
-
-    for (let x = startAt; x < data.length; x++) {
-        let y = data[x] * canvas.value.height/2 + 1;
-        canvasCtx.fillRect(x, -y, 1, 2*y);
-    }
-
-    // Reset transform
-    canvasCtx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 defineExpose({

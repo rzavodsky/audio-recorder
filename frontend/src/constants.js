@@ -1,2 +1,0 @@
-
-export const WAVEFORM_PIXELS_PER_SECOND = 100;
