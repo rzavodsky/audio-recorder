@@ -8,8 +8,10 @@
             Audio file after: <input ref="afterInput" type="file">
         </div>
     </div>
+    <button @click="goToBeginning">&lt;&lt;</button>
     <button v-if="!playing" @click="play">Play</button>
     <button v-else @click="pause">Pause</button>
+    <button @click="goToEnd">&gt;&gt;</button>
 </template>
 
 <script setup>
@@ -144,6 +146,22 @@ function pause() {
     playingAudioTimeouts = [];
     playingAudioElements = [];
 }
+
+function goToBeginning() {
+     cursorPos.value = 0;
+}
+
+function goToEnd() {
+     let end = 0;
+     for (const clipName in audioClips) {
+         if (audioClips[clipName] != null) {
+             const clip = audioClips[clipName];
+             end = Math.max(end, clip.startTime + clip.duration);
+         }
+     }
+     cursorPos.value = end;
+}
+
 </script>
 
 <style>
