@@ -1,6 +1,5 @@
 <template>
-    <div class="waveformDiv">
-        <canvas ref="canvas" width="500" height="100"></canvas>
+    <div class="waveformDiv" ref="waveformDiv">
         <div v-if="markers != null" class="markers">
             <div class="marker left"  :style="{width: markers[0] + 'px'}">
                 <div ref="handleLeft" class="handle left"></div>
@@ -26,19 +25,22 @@ const props = defineProps({
 
 const emit = defineEmits(["markerChanged"]);
 
-const canvas = ref(null);
 const markers = ref(null);
 const handleLeft = ref(null);
 const handleRight = ref(null);
+const canvasImgUrl = ref(null);
+const waveformDiv = ref(null);
+const imageWidth = ref(0);
 
-let canvasCtx = null;
 const waveformData = [];
 
 onMounted(() => {
-    canvasCtx = canvas.value.getContext("2d");
+    const canvas = document.createElement("canvas");
+    const canvasCtx = canvas.getContext("2d");
 
     const array = props.source.getChannelData(0);
-    canvas.value.width = Math.floor(props.source.duration * WAVEFORM_PIXELS_PER_SECOND);
+    canvas.width = Math.floor(props.source.duration * WAVEFORM_PIXELS_PER_SECOND);
+    canvas.height = 300;
     const sampleSize = Math.round(props.source.sampleRate / WAVEFORM_PIXELS_PER_SECOND);
     let max = 0;
 
@@ -49,10 +51,13 @@ onMounted(() => {
             max = 0;
         }
     }
-    drawWaveform(canvas.value, canvasCtx, waveformData);
+    drawWaveform(canvas, canvasCtx, waveformData);
+    const url = canvas.toDataURL("image/png");
+    canvasImgUrl.value = `url(${url})`;
+    imageWidth.value = canvas.width;
 
     if (props.markers) {
-        markers.value = [20, canvas.value.width - 20];
+        markers.value = [20, canvas.width - 20];
     }
 });
 
@@ -68,10 +73,10 @@ function setupHandle(handle, index) {
     });
     document.addEventListener("pointermove", e => {
         if (dragging) {
-            const position = e.clientX - canvas.value.getBoundingClientRect().x;
+            const position = e.clientX - waveformDiv.value.getBoundingClientRect().x;
 
             const min = index > 0 ? markers.value[index-1] : 0;
-            const max = index < markers.value.length-1 ? markers.value[index+1] : canvas.value.width;
+            const max = index < markers.value.length-1 ? markers.value[index+1] : waveformDiv.value.clientWidth;
 
             markers.value[index] = Math.min(Math.max(position, min), max);
         }
@@ -88,20 +93,20 @@ function getMarkerPos(index) {
 
 defineExpose({
     getMarkerPos,
+    width: imageWidth,
 });
 
 </script>
 
 <style>
  .waveformDiv {
+     width: v-bind(imageWidth + 'px');
      background-color: lightgray;
-     width: max-content;
      position: relative;
      overflow: hidden;
- }
-
- canvas {
-     display: block;
+     height: 100%;
+     background-image: v-bind(canvasImgUrl);
+     background-size: 100% 100%;
  }
 
  .marker {
