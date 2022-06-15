@@ -3,7 +3,7 @@
         <div class="waveformContainer" ref="waveformContainer">
             <div>
                 <Waveform v-if="props.audioClips.before" :source="props.audioClips.before.audioBuffer"
-                    :style="{ left: pixelOffsets.before + 'px' }" />
+                    ref="beforeWaveform" :style="{ left: pixelOffsets.before + 'px' }" />
             </div>
             <div>
                 <Waveform v-if="props.audioClips.recorded" :source="props.audioClips.recorded.audioBuffer" markers
@@ -12,7 +12,7 @@
             </div>
             <div>
                 <Waveform v-if="props.audioClips.after" :source="props.audioClips.after.audioBuffer"
-                    :style="{ left: pixelOffsets.after + 'px' }" />
+                    ref="afterWaveform" :style="{ left: pixelOffsets.after + 'px' }" />
             </div>
         </div>
         <div class="cursor" :style="{ left: pixelOffsets.cursor + pixelOffsets.starting + 'px' }"></div>
@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { reactive, watch, ref, onMounted } from "vue";
+import { reactive, watch, ref, onMounted, computed, nextTick } from "vue";
 import Waveform from "./Waveform.vue";
 import { WAVEFORM_PIXELS_PER_SECOND } from "/src/waveform.js";
 
@@ -41,6 +41,16 @@ const emit = defineEmits(["markerChanged", "update:modelValue"]);
 
 const waveformContainer = ref(null);
 const recordingWaveform = ref(null);
+const beforeWaveform = ref(null);
+const afterWaveform = ref(null);
+
+const maximumWidth = computed(() => {
+     let max = 0;
+     if (beforeWaveform.value != null) max = Math.max(max, beforeWaveform.value.width + pixelOffsets.before);
+     if (recordingWaveform.value != null) max = Math.max(max, recordingWaveform.value.width + pixelOffsets.recorded);
+     if (afterWaveform.value != null) max = Math.max(max, afterWaveform.value.width + pixelOffsets.after);
+     return max;
+});
 
 const pixelOffsets = reactive({
     before: 0,
@@ -52,9 +62,11 @@ const pixelOffsets = reactive({
 
 onMounted(() => {
     waveformContainer.value.addEventListener("click", e => {
-        pixelOffsets.cursor = e.clientX - waveformContainer.value.getBoundingClientRect().left - pixelOffsets.starting;
+        const position = e.clientX - waveformContainer.value.getBoundingClientRect().left - pixelOffsets.starting;
+        pixelOffsets.cursor = Math.min(Math.max(position, 0), maximumWidth.value);
         emit("update:modelValue", pixelOffsets.cursor / WAVEFORM_PIXELS_PER_SECOND);
     });
+    recalculateOffsets();
 });
 
 watch(() => props.playing, () => {
