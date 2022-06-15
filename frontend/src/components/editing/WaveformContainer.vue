@@ -15,7 +15,7 @@
                     ref="afterWaveform" :style="{ left: pixelOffsets.after + 'px' }" />
             </div>
         </div>
-        <div class="cursor" :style="{ left: pixelOffsets.cursor + pixelOffsets.starting + 'px' }"></div>
+        <div ref="cursor" class="cursor" :style="{ left: pixelOffsets.cursor + pixelOffsets.starting + 'px' }"></div>
     </div>
 </template>
 
@@ -40,6 +40,8 @@ const props = defineProps({
 const emit = defineEmits(["markerChanged", "update:modelValue"]);
 
 const waveformContainer = ref(null);
+const cursor = ref(null);
+
 const recordingWaveform = ref(null);
 const beforeWaveform = ref(null);
 const afterWaveform = ref(null);
@@ -78,7 +80,7 @@ watch(() => props.playing, () => {
 watch(props.audioClips, () => recalculateOffsets());
 watch(() => props.modelValue, () => {
     pixelOffsets.cursor = props.modelValue * WAVEFORM_PIXELS_PER_SECOND;
-    // pixelOffsets.cursor = Math.min(Math.max(props.modelValue, 0),
+    nextTick(() => cursor.value.scrollIntoView());
 });
 
 
@@ -99,6 +101,7 @@ function animateCursor(timestamp) {
     lastTimestamp = timestamp;
 
     pixelOffsets.cursor += delta * WAVEFORM_PIXELS_PER_SECOND / 1000;
+    nextTick(() => cursor.value.scrollIntoView({inline: 'center'}));
 }
 
 function recalculateOffsets() {
