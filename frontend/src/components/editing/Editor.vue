@@ -102,19 +102,34 @@ function play() {
     for (const index in clips) {
         const clip = clips[index];
         if (clip == null) continue;
+        if (clip.startTime + clip.duration < cursorPos.value) continue; // Skip if cursor is after this clip
+
         let audio = new Audio(clip.url);
-        audio.currentTime = clip.offset;
-        const startTimeout = setTimeout(() => audio.play(), clip.startTime * 1000);
-        const stopTimeout = setTimeout(() => audio.pause(), (clip.startTime + clip.duration) * 1000)
+
+        if (clip.startTime >= cursorPos.value) { // Cursor is before this clip
+            audio.currentTime = clip.offset;
+            const startTimeout = setTimeout(() => audio.play(), (clip.startTime - cursorPos.value) * 1000);
+            const stopTimeout = setTimeout(() => audio.pause(), (clip.startTime + clip.duration - cursorPos.value) * 1000)
+            playingAudioTimeouts.push(startTimeout, stopTimeout);
+        } else { // Cursor is inside this clip
+            audio.currentTime = cursorPos.value - clip.startTime + clip.offset;
+            const stopTimeout = setTimeout(() => audio.pause(), (clip.startTime + clip.duration - cursorPos.value) * 1000);
+            audio.play();
+            playingAudioTimeouts.push(stopTimeout);
+        }
+
         lastClip = clip;
         playingAudioElements.push(audio);
-        playingAudioTimeouts.push(startTimeout, stopTimeout);
     }
 
-    const pauseTimeout = setTimeout(() => pause(), (lastClip.startTime + lastClip.duration) * 1000);
+    if (lastClip == null || lastClip.startTime + lastClip.duration - cursorPos.value < 0.05) { // If we wouldn't play any clip, return cursor to the beginning and play again.
+        cursorPos.value = 0;
+        play();
+        return;
+    };
+    const pauseTimeout = setTimeout(() => pause(), (lastClip.startTime + lastClip.duration - cursorPos.value) * 1000);
     playingAudioTimeouts.push(pauseTimeout);
 
-    cursorPos.value = 0;
     playing.value = true;
 }
 
@@ -126,6 +141,8 @@ function pause() {
     for (const audio of playingAudioElements) {
         audio.pause();
     }
+    playingAudioTimeouts = [];
+    playingAudioElements = [];
 }
 </script>
 
