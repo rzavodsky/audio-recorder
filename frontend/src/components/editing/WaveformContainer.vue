@@ -1,5 +1,6 @@
 <template>
-    <div class="outerContainer">
+    <div class="outerContainer" ref="outerContainer">
+        <div class="timeline" ref="timeline" />
         <div class="waveformContainer" ref="waveformContainer">
             <div>
                 <Waveform v-if="props.audioClips.before" :source="props.audioClips.before.audioBuffer"
@@ -40,11 +41,15 @@ const props = defineProps({
 const emit = defineEmits(["markerChanged", "update:modelValue"]);
 
 const waveformContainer = ref(null);
+const timeline = ref(null);
 const cursor = ref(null);
+const outerContainer = ref(null);
 
 const recordingWaveform = ref(null);
 const beforeWaveform = ref(null);
 const afterWaveform = ref(null);
+
+const timelineImageUrl = ref("");
 
 const maximumWidth = computed(() => {
      let max = 0;
@@ -118,6 +123,19 @@ function recalculateOffsets() {
     pixelOffsets.before = (props.audioClips.before?.startTime - props.audioClips.before?.offset) * WAVEFORM_PIXELS_PER_SECOND + pixelOffsets.starting;
     pixelOffsets.recorded = (props.audioClips.recorded?.startTime - props.audioClips.recorded?.offset) * WAVEFORM_PIXELS_PER_SECOND + pixelOffsets.starting;
     pixelOffsets.after = (props.audioClips.after?.startTime - props.audioClips.after?.offset) * WAVEFORM_PIXELS_PER_SECOND + pixelOffsets.starting;
+    nextTick(generateTimeline);
+}
+
+function generateTimeline() {
+     const canvas = document.createElement("canvas");
+     canvas.height = 20;
+     canvas.width = outerContainer.value.scrollWidth;
+     const ctx = canvas.getContext("2d");
+     for (let x=pixelOffsets.starting; x<canvas.width; x += WAVEFORM_PIXELS_PER_SECOND) {
+         ctx.fillRect(x, 0, 2, canvas.height);
+     }
+     const url = canvas.toDataURL("image/png");
+     timelineImageUrl.value = `url(${url})`;
 }
 
 function getMarkerPos(index) {
@@ -159,5 +177,10 @@ defineExpose({
     height: 100%;
     top: 0;
     pointer-events: none;
+}
+
+.timeline {
+    height: 20px;
+    background-image: v-bind(timelineImageUrl);
 }
 </style>
