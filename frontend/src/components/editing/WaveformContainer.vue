@@ -25,6 +25,8 @@ import { reactive, watch, ref, onMounted, computed, nextTick } from "vue";
 import Waveform from "./Waveform.vue";
 import { WAVEFORM_PIXELS_PER_SECOND } from "/src/waveform.js";
 
+const TIMELINE_HEIGHT = 20;
+
 const props = defineProps({
     audioClips: {
         required: true,
@@ -127,15 +129,23 @@ function recalculateOffsets() {
 }
 
 function generateTimeline() {
-     const canvas = document.createElement("canvas");
-     canvas.height = 20;
-     canvas.width = outerContainer.value.scrollWidth;
-     const ctx = canvas.getContext("2d");
-     for (let x=pixelOffsets.starting; x<canvas.width; x += WAVEFORM_PIXELS_PER_SECOND) {
-         ctx.fillRect(x, 0, 2, canvas.height);
-     }
-     const url = canvas.toDataURL("image/png");
-     timelineImageUrl.value = `url(${url})`;
+    const canvas = document.createElement("canvas");
+    canvas.height = TIMELINE_HEIGHT;
+    canvas.width = outerContainer.value.scrollWidth;
+    const ctx = canvas.getContext("2d");
+    ctx.textBaseline = "middle";
+    let s = 0.0;
+    for (let x=pixelOffsets.starting; x<canvas.width; x += WAVEFORM_PIXELS_PER_SECOND / 2) {
+        if (Number.isInteger(s)) {
+            ctx.fillRect(x, 0, 2, canvas.height);
+            ctx.fillText(s.toFixed(1), x + 4, canvas.height / 2);
+        } else {
+            ctx.fillRect(x, 0, 1, canvas.height * 0.6);
+        }
+        s += 0.5;
+    }
+    const url = canvas.toDataURL("image/png");
+    timelineImageUrl.value = `url(${url})`;
 }
 
 function getMarkerPos(index) {
@@ -159,7 +169,7 @@ defineExpose({
 }
 
 .waveformContainer {
-    height: 100%;
+    height: calc(100% - v-bind(TIMELINE_HEIGHT + 'px'));
     display: flex;
     gap: 1em;
     flex-direction: column;
