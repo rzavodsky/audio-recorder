@@ -1,22 +1,24 @@
 <template>
     <div class="outerContainer" ref="outerContainer">
-        <div class="timeline" ref="timeline" />
-        <div class="waveformContainer" ref="waveformContainer">
-            <div>
-                <Waveform v-if="props.audioClips.before" :source="props.audioClips.before.audioBuffer"
-                    ref="beforeWaveform" :style="{ left: pixelOffsets.before + 'px' }" />
+	<div>
+            <div class="timeline" ref="timeline" />
+            <div class="waveformContainer" ref="waveformContainer">
+                <div>
+                    <Waveform v-if="props.audioClips.before" :source="props.audioClips.before.audioBuffer"
+                              ref="beforeWaveform" :style="{ left: pixelOffsets.before + 'px' }" />
+                </div>
+                <div>
+                    <Waveform v-if="props.audioClips.recorded" :source="props.audioClips.recorded.audioBuffer" markers
+                              ref="recordingWaveform" @markerChanged="emit('markerChanged')"
+                              :style="{ left: pixelOffsets.recorded + 'px' }" />
+                </div>
+                <div>
+                    <Waveform v-if="props.audioClips.after" :source="props.audioClips.after.audioBuffer"
+                              ref="afterWaveform" :style="{ left: pixelOffsets.after + 'px' }" />
+                </div>
             </div>
-            <div>
-                <Waveform v-if="props.audioClips.recorded" :source="props.audioClips.recorded.audioBuffer" markers
-                    ref="recordingWaveform" @markerChanged="emit('markerChanged')"
-                    :style="{ left: pixelOffsets.recorded + 'px' }" />
-            </div>
-            <div>
-                <Waveform v-if="props.audioClips.after" :source="props.audioClips.after.audioBuffer"
-                    ref="afterWaveform" :style="{ left: pixelOffsets.after + 'px' }" />
-            </div>
-        </div>
-        <div ref="cursor" class="cursor" :style="{ left: pixelOffsets.cursor + pixelOffsets.starting + 'px' }"></div>
+            <div ref="cursor" class="cursor" :style="{ left: pixelOffsets.cursor + pixelOffsets.starting + 'px' }"></div>
+	</div>
     </div>
 </template>
 
@@ -55,9 +57,9 @@ const timelineImageUrl = ref("");
 
 const maximumWidth = computed(() => {
      let max = 0;
-     if (beforeWaveform.value != null) max = Math.max(max, beforeWaveform.value.width + pixelOffsets.before);
+     if (beforeWaveform.value != null) max = Math.max(max, beforeWaveform.value.width + pixelOffsets.before - pixelOffsets.starting);
      if (recordingWaveform.value != null) max = Math.max(max, (props.audioClips.recorded.startTime + props.audioClips.recorded.duration) * WAVEFORM_PIXELS_PER_SECOND);
-     if (afterWaveform.value != null) max = Math.max(max, afterWaveform.value.width + pixelOffsets.after);
+     if (afterWaveform.value != null) max = Math.max(max, afterWaveform.value.width + pixelOffsets.after - pixelOffsets.starting);
      return max;
 });
 
@@ -75,6 +77,7 @@ onMounted(() => {
         pixelOffsets.cursor = Math.min(Math.max(position, 0), maximumWidth.value);
         emit("update:modelValue", pixelOffsets.cursor / WAVEFORM_PIXELS_PER_SECOND);
     });
+
     recalculateOffsets();
 });
 
@@ -138,7 +141,10 @@ function generateTimeline() {
     for (let x=pixelOffsets.starting; x<canvas.width; x += WAVEFORM_PIXELS_PER_SECOND / 2) {
         if (Number.isInteger(s)) {
             ctx.fillRect(x, 0, 2, canvas.height);
-            ctx.fillText(s.toFixed(1), x + 4, canvas.height / 2);
+            const numberText = s.toFixed(1);
+	    if (ctx.measureText(numberText).width + x <= canvas.width) { // Draw text only if it fits
+                ctx.fillText(s.toFixed(1), x + 4, canvas.height / 2);
+            }
         } else {
             ctx.fillRect(x, 0, 1, canvas.height * 0.6);
         }
@@ -166,6 +172,11 @@ defineExpose({
     background: gray;
     border: 2px solid black;
     height: 50vh;
+}
+
+.outerContainer > div {
+    height: 100%;
+    width: v-bind(maximumWidth + pixelOffsets.starting + 'px');
 }
 
 .waveformContainer {
