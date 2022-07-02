@@ -37,12 +37,8 @@ const props = defineProps({
         required: true,
         type: Boolean,
     },
-    modelValue: {
-        required: true,
-        type: Number,
-    },
 });
-const emit = defineEmits(["markerChanged", "update:modelValue"]);
+const emit = defineEmits(["markerChanged", "cursorUpdated"]);
 
 const waveformContainer = ref(null);
 const timeline = ref(null);
@@ -75,7 +71,7 @@ onMounted(() => {
     waveformContainer.value.addEventListener("click", e => {
         const position = e.clientX - waveformContainer.value.getBoundingClientRect().left - pixelOffsets.starting;
         pixelOffsets.cursor = Math.min(Math.max(position, 0), maximumWidth.value);
-        emit("update:modelValue", pixelOffsets.cursor / WAVEFORM_PIXELS_PER_SECOND);
+        emit("cursorUpdated", pixelOffsets.cursor / WAVEFORM_PIXELS_PER_SECOND);
     });
 
     recalculateOffsets();
@@ -88,18 +84,18 @@ watch(() => props.playing, () => {
 });
 
 watch(props.audioClips, () => recalculateOffsets());
-watch(() => props.modelValue, () => {
-    pixelOffsets.cursor = props.modelValue * WAVEFORM_PIXELS_PER_SECOND;
-    nextTick(() => cursor.value.scrollIntoView());
-});
 
+function setCursorPos(cursorPos) {
+    pixelOffsets.cursor = cursorPos * WAVEFORM_PIXELS_PER_SECOND;
+    nextTick(() => cursor.value.scrollIntoView());
+}
 
 let lastTimestamp = null;
 function animateCursor(timestamp) {
     if (props.playing) requestAnimationFrame(animateCursor);
     else {
         lastTimestamp = null;
-        emit("update:modelValue", pixelOffsets.cursor / WAVEFORM_PIXELS_PER_SECOND);
+        emit("cursorUpdated", pixelOffsets.cursor / WAVEFORM_PIXELS_PER_SECOND);
         return;
     }
 
@@ -134,7 +130,7 @@ function recalculateOffsets() {
 function generateTimeline() {
     const canvas = document.createElement("canvas");
     canvas.height = TIMELINE_HEIGHT;
-    canvas.width = outerContainer.value.scrollWidth;
+    canvas.width = timeline.value.clientWidth;
     const ctx = canvas.getContext("2d");
     ctx.textBaseline = "middle";
     let s = 0.0;
@@ -142,8 +138,8 @@ function generateTimeline() {
         if (Number.isInteger(s)) {
             ctx.fillRect(x, 0, 2, canvas.height);
             const numberText = s.toFixed(1);
-	    if (ctx.measureText(numberText).width + x <= canvas.width) { // Draw text only if it fits
-                ctx.fillText(s.toFixed(1), x + 4, canvas.height / 2);
+	    if (ctx.measureText(numberText).width + x < canvas.width) { // Draw text only if it fits
+                ctx.fillText(numberText, x + 4, canvas.height / 2);
             }
         } else {
             ctx.fillRect(x, 0, 1, canvas.height * 0.6);
@@ -160,6 +156,7 @@ function getMarkerPos(index) {
 
 defineExpose({
     getMarkerPos,
+    setCursorPos,
 })
 </script>
 

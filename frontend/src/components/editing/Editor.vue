@@ -1,10 +1,11 @@
 <template>
-    <WaveformContainer ref="waveforms" @markerChanged="recalculateTimes" :audioClips="audioClips" :playing="playing" v-model="cursorPos" />
+    <WaveformContainer ref="waveforms" @markerChanged="recalculateTimes" :audioClips="audioClips" :playing="playing"
+        @cursorUpdated="onCursorUpdated" />
     <ClipSelector @fileChanged="file => onFileChanged(file, 'before')" ref="beforeInput" />
     <ClipSelector @fileChanged="file => onFileChanged(file, 'after')" ref="afterInput" />
     <div>
-	<button @click="beforeInput.open()">Clip before</button>
-	<button @click="afterInput.open()">Clip after</button>
+        <button @click="beforeInput.open()">Clip before</button>
+        <button @click="afterInput.open()">Clip after</button>
     </div>
     <button @click="goToBeginning">&lt;&lt;</button>
     <button v-if="!playing" @click="play">Play</button>
@@ -84,6 +85,14 @@ function recalculateTimes() {
 
 }
 
+function onCursorUpdated(newCursorPos) {
+    cursorPos.value = newCursorPos;
+    if (playing.value) {
+        pause();
+        play();
+    }
+}
+
 
 let playingAudioElements = [];
 let playingAudioTimeouts = [];
@@ -117,6 +126,7 @@ function play() {
 
     if (lastClip == null || lastClip.startTime + lastClip.duration - cursorPos.value < 0.05) { // If we wouldn't play any clip, return cursor to the beginning and play again.
         cursorPos.value = 0;
+        waveforms.value.setCursorPos(cursorPos.value);
         play();
         return;
     };
@@ -139,18 +149,28 @@ function pause() {
 }
 
 function goToBeginning() {
-     cursorPos.value = 0;
+    cursorPos.value = 0;
+    waveforms.value.setCursorPos(cursorPos.value);
+    if (playing.value) {
+        pause();
+        play();
+    }
 }
 
 function goToEnd() {
-     let end = 0;
-     for (const clipName in audioClips) {
-         if (audioClips[clipName] != null) {
-             const clip = audioClips[clipName];
-             end = Math.max(end, clip.startTime + clip.duration);
-         }
-     }
-     cursorPos.value = end;
+    let end = 0;
+    for (const clipName in audioClips) {
+        if (audioClips[clipName] != null) {
+            const clip = audioClips[clipName];
+            end = Math.max(end, clip.startTime + clip.duration);
+        }
+    }
+    cursorPos.value = end;
+    waveforms.value.setCursorPos(cursorPos.value);
+    if (playing.value) {
+        pause();
+        play();
+    }
 }
 
 </script>
