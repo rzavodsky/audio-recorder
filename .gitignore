@@ -1,6 +1,5 @@
 *.org
 node_modules
-audio_files
 
 dist
 tmp
