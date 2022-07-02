@@ -1,12 +1,10 @@
 <template>
     <WaveformContainer ref="waveforms" @markerChanged="recalculateTimes" :audioClips="audioClips" :playing="playing" v-model="cursorPos" />
+    <ClipSelector @fileChanged="file => onFileChanged(file, 'before')" ref="beforeInput" />
+    <ClipSelector @fileChanged="file => onFileChanged(file, 'after')" ref="afterInput" />
     <div>
-        <div>
-            Audio file before: <input ref="beforeInput" type="file">
-        </div>
-        <div>
-            Audio file after: <input ref="afterInput" type="file">
-        </div>
+	<button @click="beforeInput.open()">Clip before</button>
+	<button @click="afterInput.open()">Clip after</button>
     </div>
     <button @click="goToBeginning">&lt;&lt;</button>
     <button v-if="!playing" @click="play">Play</button>
@@ -16,7 +14,8 @@
 
 <script setup>
 import WaveformContainer from "./WaveformContainer.vue";
-import { onMounted, reactive, ref, nextTick, watch } from "vue";
+import ClipSelector from "./ClipSelector.vue";
+import { onMounted, reactive, ref, nextTick } from "vue";
 const props = defineProps({
     recordedAudio: {
         type: Blob,
@@ -42,22 +41,14 @@ let playing = ref(false);
 onMounted(async () => {
     audioClips.recorded = await getAudioData(props.recordedAudio);
     nextTick(recalculateTimes);
-
-    beforeInput.value.onchange = e => {
-        getAudioData(e.target.files[0]).then(data => {
-            audioClips.before = data;
-            nextTick(recalculateTimes);
-        });
-    };
-
-    afterInput.value.onchange = e => {
-        getAudioData(e.target.files[0]).then(data => {
-            audioClips.after = data;
-            nextTick(recalculateTimes);
-        });
-    };
 });
 
+function onFileChanged(file, clip) {
+    getAudioData(file).then(data => {
+        audioClips[clip] = data;
+        nextTick(recalculateTimes);
+    });
+}
 
 async function getAudioData(file) {
     const audioCtx = new AudioContext();

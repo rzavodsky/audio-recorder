@@ -32,9 +32,15 @@ const canvasImgUrl = ref(null);
 const waveformDiv = ref(null);
 const imageWidth = ref(0);
 
-const waveformData = [];
-
 onMounted(() => {
+    generateWaveform();
+    if (props.markers) {
+        markers.value = [20, (props.source.duration * WAVEFORM_PIXELS_PER_SECOND) - 20];
+    }
+});
+
+function generateWaveform() {
+    let waveformData = [];
     const canvas = document.createElement("canvas");
     const canvasCtx = canvas.getContext("2d");
 
@@ -55,11 +61,7 @@ onMounted(() => {
     const url = canvas.toDataURL("image/png");
     canvasImgUrl.value = `url(${url})`;
     imageWidth.value = canvas.width;
-
-    if (props.markers) {
-        markers.value = [20, canvas.width - 20];
-    }
-});
+}
 
 function setupHandle(handle, index) {
     let dragging = false;
@@ -83,7 +85,9 @@ function setupHandle(handle, index) {
     });
 }
 
-watch(handleLeft,  newHandle => setupHandle(newHandle, 0));
+watch(() => props.source, generateWaveform);
+
+watch(handleLeft, newHandle => setupHandle(newHandle, 0));
 watch(handleRight, newHandle => setupHandle(newHandle, 1));
 
 function getMarkerPos(index) {
