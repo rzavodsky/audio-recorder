@@ -7,10 +7,15 @@
         <button @click="beforeInput.open()">Clip before</button>
         <button @click="afterInput.open()">Clip after</button>
     </div>
-    <button @click="goToBeginning">&lt;&lt;</button>
-    <button v-if="!playing" @click="play">Play</button>
-    <button v-else @click="pause">Pause</button>
-    <button @click="goToEnd">&gt;&gt;</button>
+    <div>
+        <button @click="goToBeginning">&lt;&lt;</button>
+        <button v-if="!playing" @click="play">Play</button>
+        <button v-else @click="pause">Pause</button>
+        <button @click="goToEnd">&gt;&gt;</button>
+    </div>
+    <div>
+        <button @click="upload">Upload recording</button>
+    </div>
 </template>
 
 <script setup>
@@ -171,6 +176,32 @@ function goToEnd() {
         pause();
         play();
     }
+}
+
+function upload() {
+    if (!confirm("Naozaj chcete ukončiť editovanie a uploadnúť nahrávku?")) return;
+
+    console.log(props.recordedAudio);
+    const formData = new FormData();
+    formData.set("audioFile", props.recordedAudio);
+    formData.set("markerBeginning", waveforms.value.getMarkerPos(0));
+    formData.set("markerEnd", waveforms.value.getMarkerPos(1));
+
+    fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+    }).then(res => {
+        if (res.ok) {
+            alert("Nahrávka bola nahratá na server");
+            // location.reload();
+        } else {
+            alert("Nahrávanie sa nepodarilo");
+            console.error(res);
+        }
+    }).catch(err => {
+        alert("Nahrávanie sa nepodarilo");
+        console.error(err);
+    });
 }
 
 </script>
