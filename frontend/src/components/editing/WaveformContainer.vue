@@ -51,12 +51,22 @@ const afterWaveform = ref(null);
 
 const timelineImageUrl = ref("");
 
+/* const maximumWidth = computed(() => {
+*     let max = 0;
+*     if (beforeWaveform.value != null) max = Math.max(max, beforeWaveform.value.width + pixelOffsets.before - pixelOffsets.starting);
+*     if (recordingWaveform.value != null) max = Math.max(max, (props.audioClips.recorded.startTime + props.audioClips.recorded.duration) * WAVEFORM_PIXELS_PER_SECOND);
+*     if (afterWaveform.value != null) max = Math.max(max, afterWaveform.value.width + pixelOffsets.after - pixelOffsets.starting);
+*     return max;
+* });
+*  */
 const maximumWidth = computed(() => {
     let max = 0;
-    if (beforeWaveform.value != null) max = Math.max(max, beforeWaveform.value.width + pixelOffsets.before - pixelOffsets.starting);
-    if (recordingWaveform.value != null) max = Math.max(max, (props.audioClips.recorded.startTime + props.audioClips.recorded.duration) * WAVEFORM_PIXELS_PER_SECOND);
-    if (afterWaveform.value != null) max = Math.max(max, afterWaveform.value.width + pixelOffsets.after - pixelOffsets.starting);
-    return max;
+    for (const clip of Object.values(props.audioClips)) {
+        if (clip != null) {
+            max = Math.max(max, clip.startTime + clip.duration);
+        }
+    }
+    return max * WAVEFORM_PIXELS_PER_SECOND;
 });
 
 const pixelOffsets = reactive({
@@ -112,18 +122,20 @@ function animateCursor(timestamp) {
 
 function recalculateOffsets() {
     pixelOffsets.starting = 0;
-    const clips = [props.audioClips.before, props.audioClips.recorded, props.audioClips.after];
 
-    for (const clip of clips) {
+    for (const clip of Object.values(props.audioClips)) {
         if (clip != null && clip.offset > clip.startTime + pixelOffsets.starting) {
             pixelOffsets.starting = clip.offset - clip.startTime;
         }
     }
     pixelOffsets.starting *= WAVEFORM_PIXELS_PER_SECOND;
 
-    pixelOffsets.before = (props.audioClips.before?.startTime - props.audioClips.before?.offset) * WAVEFORM_PIXELS_PER_SECOND + pixelOffsets.starting;
-    pixelOffsets.recorded = (props.audioClips.recorded?.startTime - props.audioClips.recorded?.offset) * WAVEFORM_PIXELS_PER_SECOND + pixelOffsets.starting;
-    pixelOffsets.after = (props.audioClips.after?.startTime - props.audioClips.after?.offset) * WAVEFORM_PIXELS_PER_SECOND + pixelOffsets.starting;
+    for (const clipName in props.audioClips) {
+        const clip = props.audioClips[clipName];
+        if (clip != null) {
+            pixelOffsets[clipName] = (clip.startTime - clip.offset) * WAVEFORM_PIXELS_PER_SECOND + pixelOffsets.starting;
+        }
+    }
     nextTick(generateTimeline);
 }
 

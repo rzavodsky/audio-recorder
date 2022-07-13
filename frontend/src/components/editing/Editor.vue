@@ -46,9 +46,8 @@ let playing = ref(false);
 
 const totalDuration = computed(() => {
     let end = 0;
-    for (const clipName in audioClips) {
-        if (audioClips[clipName] != null) {
-            const clip = audioClips[clipName];
+    for (const clip of Object.values(audioClips)) {
+        if (clip != null) {
             end = Math.max(end, clip.startTime + clip.duration);
         }
     }
@@ -135,10 +134,7 @@ function onCursorUpdated(newCursorPos) {
 let playingAudioElements = [];
 let playingAudioTimeouts = [];
 function play() {
-    const clips = [audioClips.before, audioClips.recorded, audioClips.after];
-
-    for (const index in clips) {
-        const clip = clips[index];
+    for (const clip of Object.values(audioClips)) {
         if (clip == null) continue;
         if (clip.startTime + clip.duration < cursorPos.value) continue; // Skip if cursor is after this clip
 
@@ -147,14 +143,13 @@ function play() {
         if (clip.startTime >= cursorPos.value) { // Cursor is before this clip
             audio.currentTime = clip.offset;
             const startTimeout = setTimeout(() => audio.play(), (clip.startTime - cursorPos.value) * 1000);
-            const stopTimeout = setTimeout(() => audio.pause(), (clip.startTime + clip.duration - cursorPos.value) * 1000)
-            playingAudioTimeouts.push(startTimeout, stopTimeout);
+            playingAudioTimeouts.push(startTimeout);
         } else { // Cursor is inside this clip
             audio.currentTime = cursorPos.value - clip.startTime + clip.offset;
-            const stopTimeout = setTimeout(() => audio.pause(), (clip.startTime + clip.duration - cursorPos.value) * 1000);
             audio.play();
-            playingAudioTimeouts.push(stopTimeout);
         }
+        const stopTimeout = setTimeout(() => audio.pause(), (clip.startTime + clip.duration - cursorPos.value) * 1000)
+        playingAudioTimeouts.push(stopTimeout);
         playingAudioElements.push(audio);
     }
 
@@ -206,7 +201,6 @@ function goToBeginning() {
 }
 
 function goToEnd() {
-
     cursorPos.value = totalDuration.value;
     waveforms.value.setCursorPos(cursorPos.value);
     if (playing.value) {
@@ -218,7 +212,6 @@ function goToEnd() {
 function upload() {
     if (!confirm("Naozaj chcete ukončiť editovanie a uploadnúť nahrávku?")) return;
 
-    console.log(props.recordedAudio);
     const formData = new FormData();
     formData.set("audioFile", props.recordedAudio);
     formData.set("markerBeginning", waveforms.value.getMarkerPos(0));
