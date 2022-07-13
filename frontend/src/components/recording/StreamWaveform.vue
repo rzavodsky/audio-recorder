@@ -28,7 +28,7 @@ onMounted(() => {
 function recordFromStream(stream) {
     audioCtx = new AudioContext();
     const source = audioCtx.createMediaStreamSource(stream);
-    audioCtx.audioWorklet.addModule("src/waveform-sampler.js")
+    audioCtx.audioWorklet.addModule("/waveform-sampler.js")
         .then(() => {
             const sampler = new AudioWorkletNode(audioCtx, 'waveform-sampler');
             source.connect(sampler);
