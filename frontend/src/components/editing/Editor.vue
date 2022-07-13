@@ -206,7 +206,7 @@ function goToBeginning() {
 }
 
 function goToEnd() {
-    
+
     cursorPos.value = totalDuration.value;
     waveforms.value.setCursorPos(cursorPos.value);
     if (playing.value) {
@@ -251,5 +251,4 @@ function upload() {
 .waveform:last-child {
     margin-bottom: 0;
 }
-
 </style>

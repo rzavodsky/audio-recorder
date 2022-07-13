@@ -1,24 +1,24 @@
 <template>
     <div class="outerContainer" ref="outerContainer">
-	<div>
+        <div>
             <div class="timeline" ref="timeline" />
             <div class="waveformContainer" ref="waveformContainer">
                 <div>
                     <Waveform v-if="props.audioClips.before" :source="props.audioClips.before.audioBuffer"
-                              ref="beforeWaveform" :style="{ left: pixelOffsets.before + 'px' }" />
+                        ref="beforeWaveform" :style="{ left: pixelOffsets.before + 'px' }" />
                 </div>
                 <div>
                     <Waveform v-if="props.audioClips.recorded" :source="props.audioClips.recorded.audioBuffer" markers
-                              ref="recordingWaveform" @markerChanged="emit('markerChanged')"
-                              :style="{ left: pixelOffsets.recorded + 'px' }" />
+                        ref="recordingWaveform" @markerChanged="emit('markerChanged')"
+                        :style="{ left: pixelOffsets.recorded + 'px' }" />
                 </div>
                 <div>
                     <Waveform v-if="props.audioClips.after" :source="props.audioClips.after.audioBuffer"
-                              ref="afterWaveform" :style="{ left: pixelOffsets.after + 'px' }" />
+                        ref="afterWaveform" :style="{ left: pixelOffsets.after + 'px' }" />
                 </div>
             </div>
-            <div ref="cursor" class="cursor" :style="{ left: pixelOffsets.cursor + pixelOffsets.starting + 'px' }"></div>
-	</div>
+            <div ref="cursor" class="cursor" :style="{ left: pixelOffsets.cursor + pixelOffsets.starting + 'px' }" />
+        </div>
     </div>
 </template>
 
@@ -52,11 +52,11 @@ const afterWaveform = ref(null);
 const timelineImageUrl = ref("");
 
 const maximumWidth = computed(() => {
-     let max = 0;
-     if (beforeWaveform.value != null) max = Math.max(max, beforeWaveform.value.width + pixelOffsets.before - pixelOffsets.starting);
-     if (recordingWaveform.value != null) max = Math.max(max, (props.audioClips.recorded.startTime + props.audioClips.recorded.duration) * WAVEFORM_PIXELS_PER_SECOND);
-     if (afterWaveform.value != null) max = Math.max(max, afterWaveform.value.width + pixelOffsets.after - pixelOffsets.starting);
-     return max;
+    let max = 0;
+    if (beforeWaveform.value != null) max = Math.max(max, beforeWaveform.value.width + pixelOffsets.before - pixelOffsets.starting);
+    if (recordingWaveform.value != null) max = Math.max(max, (props.audioClips.recorded.startTime + props.audioClips.recorded.duration) * WAVEFORM_PIXELS_PER_SECOND);
+    if (afterWaveform.value != null) max = Math.max(max, afterWaveform.value.width + pixelOffsets.after - pixelOffsets.starting);
+    return max;
 });
 
 const pixelOffsets = reactive({
@@ -107,7 +107,7 @@ function animateCursor(timestamp) {
     lastTimestamp = timestamp;
 
     pixelOffsets.cursor += delta * WAVEFORM_PIXELS_PER_SECOND / 1000;
-    nextTick(() => cursor.value.scrollIntoView({inline: 'center'}));
+    nextTick(() => cursor.value.scrollIntoView({ inline: 'center' }));
 }
 
 function recalculateOffsets() {
@@ -134,11 +134,11 @@ function generateTimeline() {
     const ctx = canvas.getContext("2d");
     ctx.textBaseline = "middle";
     let s = 0.0;
-    for (let x=pixelOffsets.starting; x<canvas.width; x += WAVEFORM_PIXELS_PER_SECOND / 2) {
+    for (let x = pixelOffsets.starting; x < canvas.width; x += WAVEFORM_PIXELS_PER_SECOND / 2) {
         if (Number.isInteger(s)) {
             ctx.fillRect(x, 0, 2, canvas.height);
             const numberText = s.toFixed(1);
-	    if (ctx.measureText(numberText).width + x < canvas.width) { // Draw text only if it fits
+            if (ctx.measureText(numberText).width + x < canvas.width) { // Draw text only if it fits
                 ctx.fillText(numberText, x + 4, canvas.height / 2);
             }
         } else {
@@ -171,7 +171,7 @@ defineExpose({
     height: 50vh;
 }
 
-.outerContainer > div {
+.outerContainer>div {
     height: 100%;
     width: v-bind(maximumWidth + pixelOffsets.starting + 'px');
 }
@@ -183,7 +183,7 @@ defineExpose({
     flex-direction: column;
 }
 
-.waveformContainer > div {
+.waveformContainer>div {
     flex-grow: 1;
     flex-basis: 0;
 }

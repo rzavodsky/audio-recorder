@@ -13,7 +13,7 @@ const props = defineProps(["width", "height"]);
 const foreground = "rgb(50, 50, 200)";
 
 const cursorPos = ref(0);
-const canvas    = ref(null);
+const canvas = ref(null);
 
 let data = [];
 let lastDataLength = 0;
@@ -71,18 +71,18 @@ defineExpose({
 </script>
 
 <style>
- .rec-waveform {
-     position: relative;
-     width: max-content;
-     background-color: lightgrey;
- }
+.rec-waveform {
+    position: relative;
+    width: max-content;
+    background-color: lightgrey;
+}
 
- .rec-waveform .cursor {
-     position: absolute;
-     width: 2px;
-     top: 0;
-     left: v-bind(cursorPos + 'px');
-     background-color: black;
-     height: 100%;
- }
+.rec-waveform .cursor {
+    position: absolute;
+    width: 2px;
+    top: 0;
+    left: v-bind(cursorPos + 'px');
+    background-color: black;
+    height: 100%;
+}
 </style>
