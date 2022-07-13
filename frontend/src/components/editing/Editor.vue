@@ -21,7 +21,7 @@
 <script setup>
 import WaveformContainer from "./WaveformContainer.vue";
 import ClipSelector from "./ClipSelector.vue";
-import { onMounted, reactive, ref, nextTick } from "vue";
+import { onMounted, reactive, ref, nextTick, computed } from "vue";
 const props = defineProps({
     recordedAudio: {
         type: Blob,
@@ -44,9 +44,42 @@ const cursorPos = ref(0);
 
 let playing = ref(false);
 
+const totalDuration = computed(() => {
+    let end = 0;
+    for (const clipName in audioClips) {
+        if (audioClips[clipName] != null) {
+            const clip = audioClips[clipName];
+            end = Math.max(end, clip.startTime + clip.duration);
+        }
+    }
+    return end;
+});
+
 onMounted(async () => {
     audioClips.recorded = await getAudioData(props.recordedAudio);
     nextTick(recalculateTimes);
+
+    // Bind keys
+    document.addEventListener("keydown", ev => {
+        switch (ev.key) {
+            case " ": // Space
+                togglePlayPause();
+                break;
+            case "ArrowLeft":
+                if (ev.shiftKey)
+                    goToBeginning();
+                else moveCursor(-0.05);
+                break;
+            case "ArrowRight":
+                if (ev.shiftKey)
+                    goToEnd();
+                else moveCursor(0.05);
+                break;
+            default:
+                return;
+        }
+        ev.preventDefault();
+    });
 });
 
 function onFileChanged(file, clip) {
@@ -104,8 +137,6 @@ let playingAudioTimeouts = [];
 function play() {
     const clips = [audioClips.before, audioClips.recorded, audioClips.after];
 
-    let lastClip = null;
-
     for (const index in clips) {
         const clip = clips[index];
         if (clip == null) continue;
@@ -124,18 +155,16 @@ function play() {
             audio.play();
             playingAudioTimeouts.push(stopTimeout);
         }
-
-        lastClip = clip;
         playingAudioElements.push(audio);
     }
 
-    if (lastClip == null || lastClip.startTime + lastClip.duration - cursorPos.value < 0.05) { // If we wouldn't play any clip, return cursor to the beginning and play again.
+    if (totalDuration.value - cursorPos.value < 0.05) { // If we wouldn't play any clip, return cursor to the beginning and play again.
         cursorPos.value = 0;
         waveforms.value.setCursorPos(cursorPos.value);
         play();
         return;
     };
-    const pauseTimeout = setTimeout(() => pause(), (lastClip.startTime + lastClip.duration - cursorPos.value) * 1000);
+    const pauseTimeout = setTimeout(() => pause(), (totalDuration.value - cursorPos.value) * 1000);
     playingAudioTimeouts.push(pauseTimeout);
 
     playing.value = true;
@@ -153,6 +182,20 @@ function pause() {
     playingAudioElements = [];
 }
 
+function togglePlayPause() {
+    if (playing.value) {
+        pause();
+    } else {
+        play();
+    }
+}
+
+function moveCursor(delta) {
+    if (playing.value) return;
+    cursorPos.value = Math.min(Math.max(cursorPos.value + delta, 0), totalDuration.value);
+    waveforms.value.setCursorPos(cursorPos.value);
+}
+
 function goToBeginning() {
     cursorPos.value = 0;
     waveforms.value.setCursorPos(cursorPos.value);
@@ -163,14 +206,8 @@ function goToBeginning() {
 }
 
 function goToEnd() {
-    let end = 0;
-    for (const clipName in audioClips) {
-        if (audioClips[clipName] != null) {
-            const clip = audioClips[clipName];
-            end = Math.max(end, clip.startTime + clip.duration);
-        }
-    }
-    cursorPos.value = end;
+    
+    cursorPos.value = totalDuration.value;
     waveforms.value.setCursorPos(cursorPos.value);
     if (playing.value) {
         pause();
