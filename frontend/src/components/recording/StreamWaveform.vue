@@ -10,7 +10,6 @@ import { ref, onMounted } from "vue";
 import { drawWaveform } from "/src/waveform.js";
 
 const props = defineProps(["width", "height"]);
-const foreground = "rgb(50, 50, 200)";
 
 const cursorPos = ref(0);
 const canvas = ref(null);
@@ -75,6 +74,7 @@ defineExpose({
     position: relative;
     width: max-content;
     background-color: lightgrey;
+    image-rendering: pixelated;
 }
 
 .rec-waveform .cursor {

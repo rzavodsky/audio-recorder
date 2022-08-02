@@ -104,6 +104,7 @@ defineExpose({
 
 <style>
 .waveformDiv {
+    image-rendering: pixelated;
     width: v-bind(imageWidth + 'px');
     background-color: lightgray;
     position: relative;
