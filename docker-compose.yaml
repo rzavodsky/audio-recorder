@@ -13,4 +13,5 @@ services:
     expose:
       - "3000"
     volumes:
-      - "./audio_files:/home/node/audio:rw"
+      - "./recorded_files:/home/node/audio:rw"
+      - "./audio_clips:/home/node/clips:ro"

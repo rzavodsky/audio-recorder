@@ -1,10 +1,11 @@
 const express = require("express");
 const multer = require("multer");
-const fs = require("fs");
+const fs = require("node:fs/promises");
 const path = require("path");
 
 const port = 3000;
 const savedAudioPath = "/home/node/audio";
+const audioClipsPath = "/home/node/clips";
 
 const app = express();
 
@@ -21,16 +22,41 @@ function fileFilter(req, file, cb) {
   cb(null, file.mimetype === "audio/ogg");
 }
 
-app.post("/api/upload", upload.single('audioFile'), (req, res, next) => {
+async function getClipNames() {
+    const files = await fs.readdir(audioClipsPath);
+    let clipNames = {};
+    for (const file of files) {
+        const name = path.basename(file, path.extname(file));
+        if (name.startsWith(".")) continue;
+        clipNames[name] = path.join(audioClipsPath, file);
+    }
+    return clipNames;
+}
+
+app.post("/api/upload", upload.single('audioFile'), async (req, res, next) => {
   if (req.file) {
     console.log(req.file);
     const filename = path.basename(req.file.filename, path.extname(req.file.filename));
     const content = JSON.stringify(req.body);
-    fs.writeFileSync(path.join(req.file.destination, `${filename}.txt`), content);
+    await fs.writeFile(path.join(req.file.destination, `${filename}.json`), content);
     res.sendStatus(204);
   } else {
     res.sendStatus(400);
   }
+});
+
+app.get("/api/clips", async (req, res) => {
+    const clipNames = await getClipNames();
+    res.json({clips: Object.keys(clipNames)});
+});
+
+app.get("/api/clip/:name", async (req, res) => {
+    const clipNames = await getClipNames();
+    if (!(req.params.name in clipNames)) {
+        res.sendStatus(404);
+        return;
+    }
+    res.sendFile(clipNames[req.params.name]);
 });
 
 app.listen(port, () => {

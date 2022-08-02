@@ -1,8 +1,8 @@
 <template>
     <WaveformContainer ref="waveforms" @markerChanged="recalculateTimes" :audioClips="audioClips" :playing="playing"
         @cursorUpdated="onCursorUpdated" />
-    <ClipSelector @fileChanged="file => onFileChanged(file, 'before')" ref="beforeInput" />
-    <ClipSelector @fileChanged="file => onFileChanged(file, 'after')" ref="afterInput" />
+    <ClipSelector title="Začiatok nahrávky" @selected="(blob, name) => onClipChanged(blob, name, 'before')" ref="beforeInput" />
+    <ClipSelector title="Koniec nahrávky" @selected="(blob, name) => onClipChanged(blob, name, 'after')" ref="afterInput" />
     <div>
         <button @click="beforeInput.open()">Clip before</button>
         <button @click="afterInput.open()">Clip after</button>
@@ -81,9 +81,15 @@ onMounted(async () => {
     });
 });
 
-function onFileChanged(file, clip) {
-    getAudioData(file).then(data => {
+function onClipChanged(blob, name, clip) {
+    if (blob === null) {
+        audioClips[clip] = null;
+        nextTick(recalculateTimes);
+        return;
+    }
+    getAudioData(blob).then(data => {
         audioClips[clip] = data;
+        audioClips[clip].clipName = name;
         nextTick(recalculateTimes);
     });
 }
@@ -92,7 +98,7 @@ async function getAudioData(file) {
     const audioCtx = new AudioContext();
     const url = URL.createObjectURL(file);
 
-    const arrayBuffer = await file.arrayBuffer()
+    const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0, arrayBuffer.byteLength));
     return {
         sampleRate: audioBuffer.sampleRate,
@@ -216,6 +222,8 @@ function upload() {
     formData.set("audioFile", props.recordedAudio);
     formData.set("markerBeginning", waveforms.value.getMarkerPos(0));
     formData.set("markerEnd", waveforms.value.getMarkerPos(1));
+    formData.set("audioClipBefore", audioClips.before?.clipName ?? null);
+    formData.set("audioClipAfter", audioClips.after?.clipName ?? null);
 
     fetch("/api/upload", {
         method: "POST",
