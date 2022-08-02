@@ -31,6 +31,7 @@ class WaveformSampler extends AudioWorkletProcessor {
       this.counter = 0;
       this.lastSample = 0;
     }
+    return true;
   }
 }
 
