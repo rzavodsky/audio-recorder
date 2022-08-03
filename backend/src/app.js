@@ -33,16 +33,67 @@ async function getClipNames() {
     return clipNames;
 }
 
+async function parseUploadBody(body) {
+    const clips = await getClipNames();
+
+    let { markerBeginning, markerEnd, audioClipBefore, audioClipAfter, ...rest} = body;
+    if (Object.keys(rest).length !== 0) { // Too many properties
+        return null;
+    }
+
+    markerBeginning = parseFloat(markerBeginning);
+    if (markerBeginning === NaN) {
+        return null;
+    }
+
+    markerEnd = parseFloat(markerEnd);
+    if (markerEnd === NaN) {
+        return null;
+    }
+
+    if (audioClipBefore === "null") {
+        audioClipBefore = null;
+    } else {
+        if (audioClipBefore in clips) {
+            audioClipBefore = path.relative(audioClipsPath, clips[audioClipBefore]);
+        } else {
+            return null;
+        }
+    }
+
+    if (audioClipAfter === "null") {
+        audioClipAfter = null;
+    } else {
+        if (audioClipAfter in clips) {
+            audioClipAfter = path.relative(audioClipsPath, clips[audioClipAfter]);
+        } else {
+            return null;
+        }
+    }
+    return {
+        audioClipBefore,
+        audioClipAfter,
+        markerBeginning,
+        markerEnd,
+    };
+}
+
 app.post("/api/upload", upload.single('audioFile'), async (req, res, next) => {
-  if (req.file) {
-    console.log(req.file);
+    if (!req.file) {
+        res.sendStatus(400);
+        return;
+    }
     const filename = path.basename(req.file.filename, path.extname(req.file.filename));
-    const content = JSON.stringify(req.body);
-    await fs.writeFile(path.join(req.file.destination, `${filename}.json`), content);
+    console.log(req.body);
+    const body = await parseUploadBody(req.body);
+    if (body === null) {
+        res.sendStatus(400);
+        fs.unlink(req.file.path);
+        return;
+    }
+
+    await fs.writeFile(path.join(req.file.destination, `${filename}.json`), JSON.stringify(body));
     res.sendStatus(204);
-  } else {
-    res.sendStatus(400);
-  }
 });
 
 app.get("/api/clips", async (req, res) => {
