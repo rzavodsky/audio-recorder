@@ -177,6 +177,8 @@ defineExpose({
 
 .outerContainer>div {
     height: 100%;
+    min-height: 17em;
+    position: relative;
     width: v-bind(maximumWidth + pixelOffsets.starting + 'px');
 }
 
@@ -204,5 +206,9 @@ defineExpose({
 .timeline {
     height: 20px;
     background-image: v-bind(timelineImageUrl);
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 10;
 }
 </style>
