@@ -51,14 +51,6 @@ const afterWaveform = ref(null);
 
 const timelineImageUrl = ref("");
 
-/* const maximumWidth = computed(() => {
-*     let max = 0;
-*     if (beforeWaveform.value != null) max = Math.max(max, beforeWaveform.value.width + pixelOffsets.before - pixelOffsets.starting);
-*     if (recordingWaveform.value != null) max = Math.max(max, (props.audioClips.recorded.startTime + props.audioClips.recorded.duration) * WAVEFORM_PIXELS_PER_SECOND);
-*     if (afterWaveform.value != null) max = Math.max(max, afterWaveform.value.width + pixelOffsets.after - pixelOffsets.starting);
-*     return max;
-* });
-*  */
 const maximumWidth = computed(() => {
     let max = 0;
     for (const clip of Object.values(props.audioClips)) {

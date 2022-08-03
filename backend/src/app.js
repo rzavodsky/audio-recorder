@@ -10,16 +10,16 @@ const audioClipsPath = "/home/node/clips";
 const app = express();
 
 const storage = multer.diskStorage({
-  destination: savedAudioPath,
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1E9) + ".ogg";
-    cb(null, uniqueName);
-  }
+    destination: savedAudioPath,
+    filename: (req, file, cb) => {
+        const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1E9) + ".ogg";
+        cb(null, uniqueName);
+    }
 });
 const upload = multer({ storage: storage, fileFilter: fileFilter });
 
 function fileFilter(req, file, cb) {
-  cb(null, file.mimetype === "audio/ogg");
+    cb(null, file.mimetype === "audio/ogg");
 }
 
 async function getClipNames() {
@@ -111,5 +111,5 @@ app.get("/api/clip/:name", async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`App listening on port ${port}`);
+    console.log(`App listening on port ${port}`);
 })
